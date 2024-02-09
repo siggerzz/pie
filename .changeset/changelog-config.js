@@ -1,9 +1,9 @@
 // @ts-check
-const {config} = require('dotenv');
-const {
+import {config} from 'dotenv';
+import {
   getInfo,
   getInfoFromPullRequest,
-} = require('@changesets/get-github-info');
+} from '@changesets/get-github-info';
 
 config();
 
@@ -109,4 +109,4 @@ const changelogFunctions = {
   },
 };
 
-module.exports = changelogFunctions;
+export { changelogFunctions };
