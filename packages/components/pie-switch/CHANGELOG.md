@@ -1,5 +1,11 @@
 # @justeattakeaway/pie-switch
 
+## 0.28.0-alpha.0
+
+### Minor Changes
+
+- [Added] - Changeset to correct tagging by [@siggerzz](https://github.com/siggerzz)
+
 ## 0.27.3
 
 ### Patch Changes

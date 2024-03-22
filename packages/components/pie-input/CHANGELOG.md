@@ -1,5 +1,11 @@
 # @justeattakeaway/pie-input
 
+## 0.15.0-alpha.0
+
+### Minor Changes
+
+- [Added] - Changeset to correct tagging by [@siggerzz](https://github.com/siggerzz)
+
 ## 0.14.0
 
 ### Minor Changes

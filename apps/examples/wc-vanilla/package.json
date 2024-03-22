@@ -1,6 +1,6 @@
 {
   "name": "wc-vanilla",
-  "version": "0.4.63",
+  "version": "0.4.64-alpha.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -17,7 +17,7 @@
     "@justeattakeaway/pie-css": "0.11.0",
     "@justeattakeaway/pie-icon-button": "0.27.7",
     "@justeattakeaway/pie-icons-webc": "0.19.1",
-    "@justeattakeaway/pie-modal": "0.41.0"
+    "@justeattakeaway/pie-modal": "0.42.0-alpha.0"
   },
   "installConfig": {
     "hoistingLimits": "workspaces"

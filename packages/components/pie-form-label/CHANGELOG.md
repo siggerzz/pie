@@ -1,5 +1,11 @@
 # @justeattakeaway/pie-form-label
 
+## 0.13.0-alpha.0
+
+### Minor Changes
+
+- [Added] - Changeset to correct tagging by [@siggerzz](https://github.com/siggerzz)
+
 ## 0.12.2
 
 ### Patch Changes
