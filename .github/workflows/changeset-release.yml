@@ -24,7 +24,7 @@ jobs:
   changesets:
     runs-on: ${{ inputs.os }}
     if: github.repository == 'justeattakeaway/pie' && ${{ github.event_name != 'pull_request' }} &&
-      (contains(github.ref_name, 'main') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'feature'))
+      (contains(github.ref_name, 'main') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha'))
     steps:
     # Checkout the Repo
     - name: Checkout
@@ -46,7 +46,7 @@ jobs:
     # Build Packages
     - name: Build
       if: ${{ github.event_name != 'pull_request' }} &&
-        (contains(github.ref_name, 'main') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'feature'))
+        (contains(github.ref_name, 'main') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha'))
       uses: ./.github/actions/run-script
       with:
         script-name: "build"
@@ -83,19 +83,19 @@ jobs:
         version: yarn changeset:version
         publish: yarn changeset:publish
         commit: "release: release packages with 'beta' tag"
-    - name: Enter feature prerelease mode
-      id: changesets-feature
-      if: steps.check_files.outputs.files_exists == 'false' && contains(github.ref_name, 'feature')
+    - name: Enter alpha prerelease mode
+      id: changesets-alpha
+      if: steps.check_files.outputs.files_exists == 'false' && contains(github.ref_name, 'alpha')
       # If .changeset/pre.json does not exist and we did not recently exit
       # prerelease mode, enter prerelease mode with tag next
-      run: npx changeset pre enter next
-    - name: Create feature release PR
-      if: contains(github.ref_name, 'feature')
+      run: npx changeset pre enter alpha
+    - name: Create alpha release PR
+      if: contains(github.ref_name, 'alpha')
       uses: changesets/action@v1
       with:
         version: yarn changeset:version
         publish: yarn changeset:publish
-        commit: "release: release packages with 'next' tag"
+        commit: "release: release packages with 'alpha' tag"
 
 
     # This script performs the following logic:
