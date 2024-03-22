@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.68.1-alpha.0
+
+### Patch Changes
+
+- Updated dependencies [[`0171f9a7`](https://github.com/justeattakeaway/pie/commit/0171f9a7f725f4a081c05a05afcc02124dd471f7)]:
+  - @justeattakeaway/pie-chip@0.4.0-alpha.0
+  - @justeattakeaway/pie-form-label@0.13.0-alpha.0
+  - @justeattakeaway/pie-input@0.15.0-alpha.0
+  - @justeattakeaway/pie-modal@0.42.0-alpha.0
+  - @justeattakeaway/pie-notification@0.4.0-alpha.0
+  - @justeattakeaway/pie-switch@0.28.0-alpha.0
+  - @justeattakeaway/pie-cookie-banner@0.18.1-alpha.0
+
 ## 0.68.0
 
 ### Minor Changes

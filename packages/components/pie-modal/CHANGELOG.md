@@ -1,5 +1,11 @@
 # @justeattakeaway/pie-modal
 
+## 0.42.0-alpha.0
+
+### Minor Changes
+
+- [Added] - Changeset to correct tagging by [@siggerzz](https://github.com/siggerzz)
+
 ## 0.41.0
 
 ### Minor Changes

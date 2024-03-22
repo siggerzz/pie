@@ -1,5 +1,11 @@
 # @justeattakeaway/pie-chip
 
+## 0.4.0-alpha.0
+
+### Minor Changes
+
+- [Added] - Changeset to correct tagging by [@siggerzz](https://github.com/siggerzz)
+
 ## 0.3.0
 
 ### Minor Changes
