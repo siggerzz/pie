@@ -16,6 +16,8 @@ export * from './defs';
 
 const componentSelector = 'pie-button';
 
+/** Dummy change */
+
 /**
  * @tagname pie-button
  * @slot icon - The icon slot
