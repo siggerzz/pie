@@ -33,7 +33,8 @@ module.exports = async ({ github, context }, execa) => {
                 client_payload: {
                   'pie-branch': '${{ github.ref_name }}',
                   'pie-pr-number': '${{ github.event.number }}',
-                  'snapshots': JSON.stringify(newTags)
+                  'snapshots': JSON.stringify(newTags),
+                  'foo': 'bar'
                 }
               })
         } catch (error) {
