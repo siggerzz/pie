@@ -11,6 +11,13 @@ module.exports = async ({ github, context }, execa) => {
         .map(([_, tag]) => tag)
         .filter((tag) => !/^wc-.+$|pie-(monorepo|docs|storybook)/.test(tag));
 
+
+        // Extract the snapshot version from one of the tags
+        const snapshotVersion = newTags[0].match(/\d{14}$/)[0];
+
+        // Extract package names by removing version and scope from the tags
+        const packageNames = newTags.map(tag => tag.match(/pie-[\w-]+/)[0]);
+
     let body;
 
     if (newTags.length > 0) {
@@ -27,14 +34,14 @@ module.exports = async ({ github, context }, execa) => {
         try {
             // Attempt to dispatch event to PIE Aperture
             await github.rest.repos.createDispatchEvent({
-                owner: 'justeattakeaway',
+                owner: 'siggerzz',
                 repo: 'pie-aperture',
                 event_type: 'pie-trigger',
                 client_payload: {
                   'pie-branch': '${{ github.ref_name }}',
                   'pie-pr-number': '${{ github.event.number }}',
-                  'snapshots': JSON.stringify(newTags),
-                  'foo': 'bar'
+                  'snapshot-version': snapshotVersion,
+                  'snapshot-packages': JSON.stringify(packageNames) 
                 }
               })
         } catch (error) {
