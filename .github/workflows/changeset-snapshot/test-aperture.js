@@ -16,7 +16,7 @@ module.exports = async ({ github, context }, execa) => {
         const snapshotVersion = newTags[0].match(/\d{14}$/)[0];
 
         // Extract package names by removing version and scope from the tags
-        const packageNames = newTags.map(tag => tag.match(/pie-[\w-]+/)[0]);
+        const packageNames = newTags.map(tag => `@justeattakeaway/${tag.match(/pie-[\w-]+/)[0]}`);
 
     let body;
 
