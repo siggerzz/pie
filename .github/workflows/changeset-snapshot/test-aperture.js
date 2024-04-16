@@ -41,7 +41,7 @@ module.exports = async ({ github, context }, execa) => {
                   'pie-branch': '${{ github.ref_name }}',
                   'pie-pr-number': '${{ github.event.number }}',
                   'snapshot-version': snapshotVersion,
-                  'snapshot-packages': JSON.stringify(packageNames) 
+                  'snapshot-packages': packageNames.join(' ')
                 }
               })
         } catch (error) {
