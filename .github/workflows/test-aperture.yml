@@ -27,30 +27,30 @@ jobs:
           comment-id: ${{ github.event.comment.id }}
           reactions: eyes
 
-      - name: Validate pull request
-        uses: actions/github-script@v6
-        id: pr_data
-        env:
-          GITHUB_TOKEN: ${{ secrets.CHANGESETS_TOKEN }}
-        with:
-          script: |
-            try {
-              const pullRequest = await github.rest.pulls.get({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: context.issue.number,
-              });
+      # - name: Validate pull request
+      #   uses: actions/github-script@v6
+      #   id: pr_data
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.CHANGESETS_TOKEN }}
+      #   with:
+      #     script: |
+      #       try {
+      #         const pullRequest = await github.rest.pulls.get({
+      #           owner: context.repo.owner,
+      #           repo: context.repo.repo,
+      #           pull_number: context.issue.number,
+      #         });
 
-                await github.rest.issues.createComment({
-                  issue_number: context.issue.number,
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  body: errorMessage,
-                });
+      #           await github.rest.issues.createComment({
+      #             issue_number: context.issue.number,
+      #             owner: context.repo.owner,
+      #             repo: context.repo.repo,
+      #             body: errorMessage,
+      #           });
 
-            } catch (err) {
-              core.setFailed(`Request failed with error ${err}`);
-            }
+      #       } catch (err) {
+      #         core.setFailed(`Request failed with error ${err}`);
+      #       }
 
       - name: Add link to build
         uses: actions/github-script@v6
