@@ -112,20 +112,20 @@ jobs:
         with:
           script-name: "build"
 
-      - name: Get Markdown Changeset Files Difference
-        id: diff_changeset_files
-        run: |
-            git remote add ben https://github.com/siggerzz/pie
-            git fetch ben ${{ steps.comment-branch.outputs.base_ref }}
-            git diff --name-only ben/${{ steps.comment-branch.outputs.base_ref }}...HEAD .changeset/*.md > changeset_diff.txt
+      # - name: Get Markdown Changeset Files Difference
+      #   id: diff_changeset_files
+      #   run: |
+      #       git remote add ben https://github.com/siggerzz/pie
+      #       git fetch ben ${{ steps.comment-branch.outputs.base_ref }}
+      #       git diff --name-only ben/${{ steps.comment-branch.outputs.base_ref }}...HEAD .changeset/*.md > changeset_diff.txt
 
-      - name: Delete Unrelated Markdown Files in Changeset
-        run: |
-            for file in $(ls .changeset/*.md); do
-              if ! grep -q "$(basename $file)" changeset_diff.txt; then
-                rm "$file"
-              fi
-            done
+      # - name: Delete Unrelated Markdown Files in Changeset
+      #   run: |
+      #       for file in $(ls .changeset/*.md); do
+      #         if ! grep -q "$(basename $file)" changeset_diff.txt; then
+      #           rm "$file"
+      #         fi
+      #       done
 
       - name: Create and publish snapshot release and trigger aperture
         uses: actions/github-script@v6
