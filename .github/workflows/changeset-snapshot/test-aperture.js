@@ -34,7 +34,7 @@ module.exports = async ({ github, context }, execa) => {
         try {
             // Attempt to dispatch event to PIE Aperture
             await github.rest.repos.createDispatchEvent({
-                owner: 'justeattakeaway',
+                owner: 'siggerzz',
                 repo: 'pie-aperture',
                 event_type: 'pie-trigger',
                 client_payload: {
