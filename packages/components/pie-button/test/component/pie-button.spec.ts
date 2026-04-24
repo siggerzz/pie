@@ -1,12 +1,20 @@
-import { test, expect } from '@playwright/test';
-import { ButtonDefaultPage } from '../helpers/page-object/pie-button-default.page.ts';
-import { ButtonAnchorPage } from '../helpers/page-object/pie-button-anchor.page.ts';
-import { ButtonAnchorWithDownloadPage } from '../helpers/page-object/pie-button-anchor-download.page.ts';
-import { ButtonAnchorWithDownloadFilenamePage } from '../helpers/page-object/pie-button-anchor-download-filename.page.ts';
-import { FormIntegrationPage, type FormInput } from '../helpers/page-object/pie-button-form-integration.page.ts';
-import { FormAttributesPage } from '../helpers/page-object/pie-button-form-attributes.page.ts';
-import { FormSubmissionPage } from '../helpers/page-object/pie-button-form-submission.page.ts';
+import { type Page } from '@playwright/test';
+import { test, expect } from '@justeattakeaway/pie-webc-testing/src/playwright/playwright-fixtures.ts';
+// `import type *` is erased at runtime, so Playwright never tries to load the
+// stories file (which imports `lit`, `@storybook/web-components`, etc.). The
+// `typeof ButtonStoriesNS` generic still lets TS check that a story name is a
+// real export — renaming `Primary` to `Default` becomes a compile error here.
+// `ButtonStoryProps` is the args type the test stories template uses; it
+// extends `ButtonProps` with story-only flags (e.g. `showSubmitButton`).
+// eslint-disable-next-line import/no-relative-packages
+import type * as ButtonStoriesNS from '../../../../../apps/pie-storybook/stories/testing/pie-button.test.stories.ts';
+import { FormIntegrationHelper, type FormInput } from '../helpers/test-helpers/form-integration-helper.ts';
 import type { ButtonProps } from '../../src/index.ts';
+
+type ButtonStories = typeof ButtonStoriesNS;
+type ButtonStoryProps = ButtonStoriesNS.ButtonProps;
+
+const buttonMeta = { title: 'Button' };
 
 const formInputData: FormInput = {
     userName: 'John Doe',
@@ -17,119 +25,92 @@ const formInputData: FormInput = {
     userPaymentCardExpiration: '12/24',
 };
 
-test('should correctly work with native click events', async ({ page }) => {
-    // Arrange
-    const buttonDefaultPage = new ButtonDefaultPage(page);
-    await buttonDefaultPage.load();
+const clickButton = (page: Page, label: string) => page.locator('pie-button', { hasText: label }).click();
 
-    // Set up a listener for console messages
+test('should correctly work with native click events', async ({ mountStory, page }) => {
+    const { root } = await mountStory<ButtonStories, ButtonStoryProps>(buttonMeta, 'Primary');
+
     const consoleMessages: string[] = [];
     page.on('console', (message) => {
-        if (message.type() === 'info') {
-            consoleMessages.push(message.text());
-        }
+        if (message.type() === 'info') consoleMessages.push(message.text());
     });
 
-    // Act
-    await buttonDefaultPage.clickButtonWithText('Label');
+    await root.locator('pie-button', { hasText: 'Label' }).click();
 
-    // Assert
     expect(consoleMessages).toContain('Button clicked!');
 });
 
 test.describe('Form Actions', () => {
     test.describe('Submit', () => {
-        test('should correctly submit an HTML form when type is `submit`', async ({ page }) => {
-            // Arrange
-            const formIntegrationPage = new FormIntegrationPage(page);
-            await formIntegrationPage.load();
+        test('should correctly submit an HTML form when type is `submit`', async ({ mountStory, page }) => {
+            const { root } = await mountStory<ButtonStories, ButtonStoryProps>(buttonMeta, 'FormIntegration');
+            const form = new FormIntegrationHelper(page, root);
 
-            // Act
-            await formIntegrationPage.fillForm(formInputData);
-            await formIntegrationPage.clickButtonWithText('Submit');
+            await form.fillForm(formInputData);
+            await clickButton(page, 'Submit');
 
-            // Assert
-            await expect(formIntegrationPage.formSubmittedFlag).toHaveCount(1);
-            await expect(formIntegrationPage.formSubmittedFlag).toBeHidden();
+            await expect(form.formSubmittedFlag).toHaveCount(1);
+            await expect(form.formSubmittedFlag).toBeHidden();
         });
 
-        test('should trigger native HTML form validation for required fields and submit after correcting when type is `submit`', async ({ page }) => {
-            // Arrange
-            const formIntegrationPage = new FormIntegrationPage(page);
-            await formIntegrationPage.load();
+        test('should trigger native HTML form validation for required fields and submit after correcting when type is `submit`', async ({ mountStory, page }) => {
+            const { root } = await mountStory<ButtonStories, ButtonStoryProps>(buttonMeta, 'FormIntegration');
+            const form = new FormIntegrationHelper(page, root);
 
-            // Act
-            await formIntegrationPage.clickButtonWithText('Submit');
+            await clickButton(page, 'Submit');
 
-            // Assert
-            await expect.soft(formIntegrationPage.formSubmittedFlag).toHaveCount(0);
+            await expect.soft(form.formSubmittedFlag).toHaveCount(0);
 
-            await formIntegrationPage.fillForm(formInputData);
-            await formIntegrationPage.clickButtonWithText('Submit');
+            await form.fillForm(formInputData);
+            await clickButton(page, 'Submit');
 
-            // Assert
-            await expect(formIntegrationPage.formSubmittedFlag).toHaveCount(1);
+            await expect(form.formSubmittedFlag).toHaveCount(1);
         });
 
-        test('should not submit the form when button is disabled and type is `submit`', async ({ page }) => {
-            // Arrange
-            const formIntegrationPage = new FormIntegrationPage(page);
-            await formIntegrationPage.load({ disabled: true });
+        test('should not submit the form when button is disabled and type is `submit`', async ({ mountStory, page }) => {
+            const { root } = await mountStory<ButtonStories, ButtonStoryProps>(buttonMeta, 'FormIntegration', { args: { disabled: true } });
+            const form = new FormIntegrationHelper(page, root);
 
-            // Act
-            await formIntegrationPage.clickButtonWithText('Submit');
+            await clickButton(page, 'Submit');
 
-            // Assert
-            await expect(formIntegrationPage.formSubmittedFlag).toHaveCount(0);
+            await expect(form.formSubmittedFlag).toHaveCount(0);
         });
 
-        test('should not submit the form when button has isLoading set and type is `submit`', async ({ page }) => {
-            // Arrange
-            const formIntegrationPage = new FormIntegrationPage(page);
-            await formIntegrationPage.load({ isLoading: true });
+        test('should not submit the form when button has isLoading set and type is `submit`', async ({ mountStory, page }) => {
+            const { root } = await mountStory<ButtonStories, ButtonStoryProps>(buttonMeta, 'FormIntegration', { args: { isLoading: true } });
+            const form = new FormIntegrationHelper(page, root);
 
-            // Act
-            await formIntegrationPage.clickButtonWithText('Submit');
+            await clickButton(page, 'Submit');
 
-            // Assert
-            await expect(formIntegrationPage.formSubmittedFlag).toHaveCount(0);
+            await expect(form.formSubmittedFlag).toHaveCount(0);
         });
 
-        test('should include pie-button\'s name and value in the form submission data when it triggers submission', async ({ page }) => {
-            // Arrange
-            const formSubmissionPage = new FormSubmissionPage(page);
-            await formSubmissionPage.load();
+        test('should include pie-button\'s name and value in the form submission data when it triggers submission', async ({ mountStory, page }) => {
+            await mountStory<ButtonStories, ButtonStoryProps>(buttonMeta, 'FormSubmission');
 
-            // Act
             const requestPromise = page.waitForRequest(/submit-endpoint/);
             await page.fill('input[name="username"]', 'testUser');
 
-            await formSubmissionPage.clickButtonWithText('Submit');
+            await clickButton(page, 'Submit');
 
             const request = await requestPromise;
             const formData = request.postData();
 
-            // Assert
             expect(formData).toContain('submitButton=submitValue');
         });
 
-        test('should respect all form-related attributes on the pie-button', async ({ page }) => {
-            // Arrange
-            const formAttributesPage = new FormAttributesPage(page);
-            await formAttributesPage.load();
+        test('should respect all form-related attributes on the pie-button', async ({ mountStory, page }) => {
+            await mountStory<ButtonStories, ButtonStoryProps>(buttonMeta, 'FormWithAllAttributes');
 
-            // Act
             const requestPromise = page.waitForRequest(/custom-endpoint/);
             await page.fill('input[name="username"]', 'testUser');
-            await formAttributesPage.clickButtonWithText('Submit');
+            await clickButton(page, 'Submit');
 
             const request = await requestPromise;
-
             const postData = request.postData();
             const method = request.method();
             const headers = request.headers();
 
-            // Assert
             expect(postData).not.toBeNull();
             const submitButtonDisposition = 'Content-Disposition: form-data; name="submitButton"';
             const submitButtonValuePosition = (postData as string).indexOf(submitButtonDisposition) + submitButtonDisposition.length;
@@ -145,67 +126,53 @@ test.describe('Form Actions', () => {
         ];
 
         submitTestCases.forEach((testCase) => {
-            test(` ${testCase.titlePrefix} the form when pressing Enter with pie-button type 'submit': ${testCase.showSubmitButton}`, async ({ page }) => {
-                // Arrange
-                const formIntegrationPage = new FormIntegrationPage(page);
-                await formIntegrationPage.load({ showSubmitButton: testCase.showSubmitButton });
+            test(` ${testCase.titlePrefix} the form when pressing Enter with pie-button type 'submit': ${testCase.showSubmitButton}`, async ({ mountStory, page }) => {
+                const { root } = await mountStory<ButtonStories, ButtonStoryProps>(buttonMeta, 'FormIntegration', { args: { showSubmitButton: testCase.showSubmitButton } });
+                const form = new FormIntegrationHelper(page, root);
 
-                // Act
-                await formIntegrationPage.fillForm(formInputData);
-                await formIntegrationPage.userPasswordInput.focus();
-                await formIntegrationPage.userPasswordInput.press('Enter');
+                await form.fillForm(formInputData);
+                await form.userPasswordInput.focus();
+                await form.userPasswordInput.press('Enter');
 
-                // Assert
-                await expect(formIntegrationPage.formSubmittedFlag).toHaveCount(testCase.expectedFormSubmittedFlagCount);
+                await expect(form.formSubmittedFlag).toHaveCount(testCase.expectedFormSubmittedFlagCount);
             });
         });
 
-        test('should NOT submit the form when pressing Enter on a pie-button that is not type of submit', async ({ page }) => {
-            // Arrange
-            const formIntegrationPage = new FormIntegrationPage(page);
-            await formIntegrationPage.load();
+        test('should NOT submit the form when pressing Enter on a pie-button that is not type of submit', async ({ mountStory, page }) => {
+            const { root } = await mountStory<ButtonStories, ButtonStoryProps>(buttonMeta, 'FormIntegration');
+            const form = new FormIntegrationHelper(page, root);
 
-            // Fill out the form
-            await formIntegrationPage.fillForm(formInputData);
+            await form.fillForm(formInputData);
 
-            // Act
             await page.keyboard.press('Tab');
             await page.keyboard.press('Enter');
 
-            // Assert
-            await expect(formIntegrationPage.formSubmittedFlag).toHaveCount(0);
+            await expect(form.formSubmittedFlag).toHaveCount(0);
         });
 
-        test('should NOT submit the form when pressing Enter on a native non-submit button', async ({ page }) => {
-            // Arrange
-            const formIntegrationPage = new FormIntegrationPage(page);
-            await formIntegrationPage.load({ showNativeResetButton: true });
+        test('should NOT submit the form when pressing Enter on a native non-submit button', async ({ mountStory, page }) => {
+            const { root } = await mountStory<ButtonStories, ButtonStoryProps>(buttonMeta, 'FormIntegration', { args: { showNativeResetButton: true } });
+            const form = new FormIntegrationHelper(page, root);
 
-            await formIntegrationPage.fillForm(formInputData);
+            await form.fillForm(formInputData);
 
-            // Act
-            await formIntegrationPage.resetNativeButton.focus();
-            await formIntegrationPage.resetNativeButton.press('Enter');
+            await form.resetNativeButton.focus();
+            await form.resetNativeButton.press('Enter');
 
-            // Assert
-            await expect(formIntegrationPage.formSubmittedFlag).toHaveCount(0);
+            await expect(form.formSubmittedFlag).toHaveCount(0);
         });
     });
 
     test.describe('Reset', () => {
-        test('should reset the form by clicking the reset button when type is `reset`', async ({ page }) => {
-            // Arrange
-            const formIntegrationPage = new FormIntegrationPage(page);
-            await formIntegrationPage.load();
+        test('should reset the form by clicking the reset button when type is `reset`', async ({ mountStory, page }) => {
+            const { root } = await mountStory<ButtonStories, ButtonStoryProps>(buttonMeta, 'FormIntegration');
+            const form = new FormIntegrationHelper(page, root);
 
-            await formIntegrationPage.fillForm(formInputData);
+            await form.fillForm(formInputData);
 
-            // Act
-            await formIntegrationPage.clickButtonWithText('Reset');
+            await clickButton(page, 'Reset');
 
-            // Assert
-            const formFieldValues = await formIntegrationPage.getFormFieldValues();
-
+            const formFieldValues = await form.getFormFieldValues();
             const expectedFormFieldValues: FormInput = {
                 userName: '',
                 userEmail: '',
@@ -218,51 +185,39 @@ test.describe('Form Actions', () => {
             expect(formFieldValues).toEqual(expectedFormFieldValues);
         });
 
-        test('should not reset the form when button is disabled and type is `reset`', async ({ page }) => {
-            // Arrange
-            const formIntegrationPage = new FormIntegrationPage(page);
-            await formIntegrationPage.load({ disabled: true });
+        test('should not reset the form when button is disabled and type is `reset`', async ({ mountStory, page }) => {
+            const { root } = await mountStory<ButtonStories, ButtonStoryProps>(buttonMeta, 'FormIntegration', { args: { disabled: true } });
+            const form = new FormIntegrationHelper(page, root);
 
-            await formIntegrationPage.fillForm(formInputData);
+            await form.fillForm(formInputData);
 
-            // Act
-            await formIntegrationPage.clickButtonWithText('Reset');
+            await clickButton(page, 'Reset');
 
-            // Assert
-            const formFieldValues = await formIntegrationPage.getFormFieldValues();
-            expect(formFieldValues).toEqual(formInputData);
+            expect(await form.getFormFieldValues()).toEqual(formInputData);
         });
 
-        test('should not reset the form when button has `isLoading` set and type is `reset`', async ({ page }) => {
-            // Arrange
-            const formIntegrationPage = new FormIntegrationPage(page);
-            await formIntegrationPage.load({ isLoading: true });
+        test('should not reset the form when button has `isLoading` set and type is `reset`', async ({ mountStory, page }) => {
+            const { root } = await mountStory<ButtonStories, ButtonStoryProps>(buttonMeta, 'FormIntegration', { args: { isLoading: true } });
+            const form = new FormIntegrationHelper(page, root);
 
-            await formIntegrationPage.fillForm(formInputData);
+            await form.fillForm(formInputData);
 
-            // Act
-            await formIntegrationPage.clickButtonWithText('Reset');
+            await clickButton(page, 'Reset');
 
-            // Assert
-            const formFieldValues = await formIntegrationPage.getFormFieldValues();
-            expect(formFieldValues).toEqual(formInputData);
+            expect(await form.getFormFieldValues()).toEqual(formInputData);
         });
     });
 
     test.describe('Association', () => {
-        test('should correctly associate with its containing form and not with other forms', async ({ page }) => {
-            // Arrange
-            const formIntegrationPage = new FormIntegrationPage(page);
-            await formIntegrationPage.load({ renderIncorrectForm: true });
+        test('should correctly associate with its containing form and not with other forms', async ({ mountStory, page }) => {
+            const { root } = await mountStory<ButtonStories, ButtonStoryProps>(buttonMeta, 'FormIntegration', { args: { renderIncorrectForm: true } });
+            const form = new FormIntegrationHelper(page, root);
 
-            // Wait for the submit button to be rendered before evaluating form association,
-            // as page.evaluate does not auto-wait for custom element upgrade
-            await formIntegrationPage.submitPieButton.waitFor({ state: 'visible' });
+            // Wait for the submit button to upgrade before evaluating .form
+            await form.submitPieButton.waitFor({ state: 'visible' });
 
-            // Act
-            const associatedFormId = await formIntegrationPage.getAssociatedFormIdForButton('pie-button-submit');
+            const associatedFormId = await form.getAssociatedFormIdForButton('pie-button-submit');
 
-            // Assert
             expect(associatedFormId).toBe('testForm');
         });
     });
@@ -271,34 +226,23 @@ test.describe('Form Actions', () => {
 test.describe('props', () => {
     test.describe('tag', () => {
         test.describe('when set to "button"', () => {
-            test('should render a button element', async ({ page }) => {
-                // Arrange
-                const props: ButtonProps = {
-                    tag: 'button',
-                };
+            test('should render a button element', async ({ mountStory }) => {
+                const { root } = await mountStory<ButtonStories, ButtonStoryProps>(buttonMeta, 'Primary', { args: { tag: 'button' } });
 
-                const buttonDefaultPage = new ButtonDefaultPage(page);
-                await buttonDefaultPage.load({ ...props });
-
-                // Assert
-                await expect(buttonDefaultPage.buttonComponent.componentLocator.locator('button')).toBeVisible();
+                await expect(root.locator('pie-button').locator('button')).toBeVisible();
             });
 
-            test('should not render anchor-specific attributes', async ({ page }) => {
-                // Arrange
-                const props: ButtonProps = {
+            test('should not render anchor-specific attributes', async ({ mountStory }) => {
+                const props: Partial<ButtonProps> = {
                     tag: 'button',
-                    // Anchor-specific props
                     href: '/test',
                     rel: 'noopener noreferrer',
                     target: '_blank',
                 };
-                const buttonDefaultPage = new ButtonDefaultPage(page);
-                await buttonDefaultPage.load({ ...props });
+                const { root } = await mountStory<ButtonStories, ButtonStoryProps>(buttonMeta, 'Primary', { args: props });
 
-                const buttonShadowElement = buttonDefaultPage.buttonComponent.componentLocator.locator('button');
+                const buttonShadowElement = root.locator('pie-button').locator('button');
 
-                // Assert
                 await expect(buttonShadowElement).not.toHaveAttribute('rel', props.rel as string);
                 await expect(buttonShadowElement).not.toHaveAttribute('target', props.target as string);
                 await expect(buttonShadowElement).not.toHaveAttribute('href', props.href as string);
@@ -306,32 +250,23 @@ test.describe('props', () => {
         });
 
         test.describe('when set to "a"', () => {
-            test('should render an anchor element', async ({ page }) => {
-                // Arrange
-                const buttonAnchorPage = new ButtonAnchorPage(page);
-                await buttonAnchorPage.load();
+            test('should render an anchor element', async ({ mountStory }) => {
+                const { root } = await mountStory<ButtonStories, ButtonStoryProps>(buttonMeta, 'Anchor');
 
-                const anchor = buttonAnchorPage.buttonComponent.componentLocator.locator('a');
-
-                // Assert
-                await expect(anchor).toBeVisible();
+                await expect(root.locator('pie-button').locator('a')).toBeVisible();
             });
 
-            test('should not render button-specific attributes', async ({ page }) => {
-                // Arrange
-                const props: ButtonProps = {
+            test('should not render button-specific attributes', async ({ mountStory }) => {
+                const props: Partial<ButtonProps> = {
                     tag: 'a',
-                    // Button-specific props
                     disabled: true,
                     isLoading: true,
                     type: 'submit',
                 };
 
-                const buttonAnchorPage = new ButtonAnchorPage(page);
-                await buttonAnchorPage.load({ ...props });
+                const { root } = await mountStory<ButtonStories, ButtonStoryProps>(buttonMeta, 'Anchor', { args: props });
 
-                // Assert
-                const anchor = buttonAnchorPage.buttonComponent.componentLocator.locator('a');
+                const anchor = root.locator('pie-button').locator('a');
                 const spinner = anchor.locator('pie-spinner');
 
                 await expect.soft(anchor).not.toHaveClass(/is-loading/);
@@ -340,34 +275,26 @@ test.describe('props', () => {
                 await expect(spinner).not.toBeVisible();
             });
 
-            test('should correctly download files when download is an empty string', async ({ page }) => {
-                // Arrange
-                const buttonAnchorPage = new ButtonAnchorWithDownloadPage(page);
-                await buttonAnchorPage.load();
+            test('should correctly download files when download is an empty string', async ({ mountStory, page }) => {
+                const { root } = await mountStory<ButtonStories, ButtonStoryProps>(buttonMeta, 'AnchorWithDownload');
 
-                // Act
-                const anchor = buttonAnchorPage.buttonComponent.componentLocator;
+                const anchor = root.locator('pie-button');
                 const downloadPromise = page.waitForEvent('download');
                 await anchor.click();
                 const download = await downloadPromise;
 
-                // Assert
                 expect(download.suggestedFilename()).toBe('logo--pie--dark.svg');
                 expect(download.url()).toContain('/static/images/logo--pie--dark.svg');
             });
 
-            test('should correctly download files with custom filename when download is a non-empty string', async ({ page }) => {
-                // Arrange
-                const buttonAnchorPage = new ButtonAnchorWithDownloadFilenamePage(page);
-                await buttonAnchorPage.load();
+            test('should correctly download files with custom filename when download is a non-empty string', async ({ mountStory, page }) => {
+                const { root } = await mountStory<ButtonStories, ButtonStoryProps>(buttonMeta, 'AnchorWithDownloadFilename');
 
-                // Act
-                const anchor = buttonAnchorPage.buttonComponent.componentLocator;
+                const anchor = root.locator('pie-button');
                 const downloadPromise = page.waitForEvent('download');
                 await anchor.click();
                 const download = await downloadPromise;
 
-                // Assert
                 expect(download.suggestedFilename()).toBe('pie-logo.svg');
                 expect(download.url()).toContain('/static/images/logo--pie--dark.svg');
             });

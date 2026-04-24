@@ -14,7 +14,7 @@ import {
 } from '../../utilities';
 import { type SlottedComponentProps } from '../../types';
 
-type ButtonProps = SlottedComponentProps<ButtonPropsBase> & {
+export type ButtonProps = SlottedComponentProps<ButtonPropsBase> & {
     showSubmitButton?: boolean;
     showNativeResetButton?: boolean;
     renderIncorrectForm?: boolean;

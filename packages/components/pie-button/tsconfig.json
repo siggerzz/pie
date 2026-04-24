@@ -2,7 +2,13 @@
   "extends": "@justeattakeaway/pie-components-config/tsconfig.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "rootDir": ".",
   },
-  "include": ["src/**/*.ts", "../../../configs/pie-components-config/declaration.d.ts", "test/**/*.ts", "playwright-lit-visual.config.ts", "playwright-lit.config.ts"],
+  "include": [
+    "src/**/*.ts",
+    "../../../configs/pie-components-config/declaration.d.ts",
+    "test/**/*.ts",
+    "playwright-lit-visual.config.ts",
+    "playwright-lit.config.ts",
+    "../../../apps/pie-storybook/stories/testing/pie-button.test.stories.ts"
+  ],
 }
