@@ -44,6 +44,32 @@ const buildIframeUrl = (storyId: string, globals?: Globals): string => {
     return url.toString();
 };
 
+const navigateToStory = async (
+    page: Page,
+    storyId: string,
+    args: Record<string, unknown> | undefined,
+    globals: Globals | undefined,
+    waitUntil: 'load' | 'domcontentloaded' | 'networkidle' | undefined,
+): Promise<MountedStory> => {
+    await page.addInitScript(({ id: injectedId, args: injectedArgs }) => {
+        (window as unknown as { __PIE_TEST_ARGS__?: unknown }).__PIE_TEST_ARGS__ = {
+            id: injectedId,
+            args: injectedArgs,
+        };
+    }, { id: storyId, args: args ?? {} });
+
+    await page.goto(buildIframeUrl(storyId, globals), {
+        waitUntil: waitUntil ?? 'load',
+    });
+
+    await page.locator(READY_SELECTOR).waitFor({ state: 'attached' });
+
+    return {
+        root: page.locator(STORY_ROOT_SELECTOR),
+        page,
+    };
+};
+
 interface ExtendedTestContext {
     page: Page;
     makeAxeBuilder: () => AxeBuilder;
@@ -72,6 +98,17 @@ interface ExtendedTestContext {
         storyName: K,
         opts?: MountStoryOptions<StoryArgs<M[K]>>,
     ) => Promise<MountedStory>;
+    /**
+     * Mounts a Storybook story by raw id. Use this when the id is built
+     * dynamically (e.g. visual specs iterating over a `variants` array) and
+     * a typed `mountStory(module, name)` reference isn't practical. Args
+     * cannot be injected through this entrypoint — for prop-driven tests
+     * use the typed `mountStory` instead.
+     */
+    mountStoryById: (
+        storyId: string,
+        opts?: Omit<MountStoryOptions<never>, 'args'>,
+    ) => Promise<MountedStory>;
 }
 
 export const test = baseTest.extend<ExtendedTestContext>({
@@ -84,28 +121,16 @@ export const test = baseTest.extend<ExtendedTestContext>({
     }, { timeout: 60000 }],
 
     mountStory: async ({ page }, use) => {
-        const mount: ExtendedTestContext['mountStory'] = async (storiesModule, storyName, opts) => {
+        const mount: ExtendedTestContext['mountStory'] = (storiesModule, storyName, opts) => {
             const id = getStoryId(storiesModule, storyName);
-
-            await page.addInitScript(({ id: injectedId, args }) => {
-                (window as unknown as { __PIE_TEST_ARGS__?: unknown }).__PIE_TEST_ARGS__ = {
-                    id: injectedId,
-                    args,
-                };
-            }, { id, args: opts?.args ?? {} });
-
-            await page.goto(buildIframeUrl(id, opts?.globals), {
-                waitUntil: opts?.waitUntil ?? 'load',
-            });
-
-            await page.locator(READY_SELECTOR).waitFor({ state: 'attached' });
-
-            return {
-                root: page.locator(STORY_ROOT_SELECTOR),
-                page,
-            };
+            return navigateToStory(page, id, opts?.args as Record<string, unknown> | undefined, opts?.globals, opts?.waitUntil);
         };
 
+        await use(mount);
+    },
+
+    mountStoryById: async ({ page }, use) => {
+        const mount: ExtendedTestContext['mountStoryById'] = (storyId, opts) => navigateToStory(page, storyId, undefined, opts?.globals, opts?.waitUntil);
         await use(mount);
     },
 });
