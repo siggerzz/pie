@@ -3,7 +3,9 @@ import './styles/docs.scss';
 import './styles/component-status.scss';
 import './styles/icons.scss';
 
-import { WritingDirection, ComponentStatus, ColorMode } from '../decorators';
+import {
+    WritingDirection, ComponentStatus, ColorMode, TestArgs,
+} from '../decorators';
 import CUSTOM_VIEWPORTS from './viewports';
 import backgrounds from './backgrounds';
 import getTheme from './pieTheme';
@@ -20,7 +22,9 @@ SyntaxHighlighter.registerLanguage('scss', scss);
 const AccessibilityRules = ['wcag21a', 'wcag21aa', 'wcag143', 'cat.color', 'cat.aria'];
 
 export default {
-    decorators: [ComponentStatus, WritingDirection, ColorMode],
+    // `TestArgs` is a no-op unless Playwright sets `window.__PIE_TEST_ARGS__`
+    // via `addInitScript`, so it's safe to register in every Storybook build.
+    decorators: [TestArgs, ComponentStatus, WritingDirection, ColorMode],
     globalTypes: {
         writingDirection: {
             description: 'Which direction should content be written in',
