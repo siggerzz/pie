@@ -3,15 +3,13 @@ import {
 } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { getStorybookBaseUrl } from '../helpers/storybook-base-url';
-import { getStoryId, type StoryArgs } from '../helpers/story-id';
-
-type StoriesModule = { default: { title: string } } & Record<string, unknown>;
+import { getStoryId } from '../helpers/story-id';
 
 type Globals = {
     writingDirection?: 'ltr' | 'rtl' | 'auto';
 };
 
-export type MountStoryOptions<TArgs> = {
+export type MountStoryOptions<TArgs = Record<string, unknown>> = {
     args?: Partial<TArgs>;
     globals?: Globals;
     waitUntil?: 'load' | 'domcontentloaded' | 'networkidle';
@@ -23,6 +21,9 @@ export type MountedStory = {
     /** The same Playwright `Page` the test received, returned for convenience. */
     page: Page;
 };
+
+/** Names of all stories exported by a CSF module (everything except `default`). */
+export type StoryName<S> = Exclude<keyof S, 'default'> & string;
 
 const READY_SELECTOR = 'body[data-pie-test-ready="true"]';
 const STORY_ROOT_SELECTOR = '#storybook-root';
@@ -77,37 +78,42 @@ interface ExtendedTestContext {
      * Mounts a Storybook story by typed reference and returns a locator for
      * its rendered root.
      *
-     * @example
-     *   import * as ButtonStories from '.../pie-button.test.stories';
+     * The stories module is referenced as a TYPE only (`import type * as ...`)
+     * so Playwright doesn't load the file at runtime — that file pulls in
+     * `lit`, `@storybook/web-components`, and other browser-only packages
+     * which Node's loader can't resolve cross-workspace. The `meta` object
+     * carries the title at runtime; the `S` generic carries the export names
+     * at compile time.
      *
-     *   const { root } = await mountStory(ButtonStories, 'Primary', {
-     *       args: { variant: 'secondary', slot: 'Hello & <world>' },
-     *   });
-     *   await expect(root.locator('pie-button')).toBeVisible();
+     * @example
+     *   import type * as ButtonStories from '.../pie-button.test.stories';
+     *
+     *   const { root } = await mountStory<typeof ButtonStories, ButtonProps>(
+     *       { title: 'Button' },
+     *       'Primary',
+     *       { args: { variant: 'secondary', slot: 'Hello & <world>' } },
+     *   );
      *
      * Renaming a story export (e.g. `Primary` → `Default`) becomes a TypeScript
-     * error at the call site, so Storybook 404s caused by drift are caught at
-     * build time. Prop overrides are injected via `window.__PIE_TEST_ARGS__`,
+     * error at the `'Primary'` call site, so Storybook 404s caused by drift are
+     * caught at build time. Prop overrides flow via `window.__PIE_TEST_ARGS__`,
      * sidestepping Storybook's URL `&args=` channel and its sanitization.
      */
-    mountStory: <
-        M extends StoriesModule,
-        K extends Exclude<keyof M, 'default'> & string,
-    >(
-        storiesModule: M,
-        storyName: K,
-        opts?: MountStoryOptions<StoryArgs<M[K]>>,
+    mountStory: <S, TArgs = Record<string, unknown>>(
+        meta: { title: string },
+        storyName: StoryName<S>,
+        opts?: MountStoryOptions<TArgs>,
     ) => Promise<MountedStory>;
     /**
      * Mounts a Storybook story by raw id. Use this when the id is built
      * dynamically (e.g. visual specs iterating over a `variants` array) and
-     * a typed `mountStory(module, name)` reference isn't practical. Args
-     * cannot be injected through this entrypoint — for prop-driven tests
-     * use the typed `mountStory` instead.
+     * a typed `mountStory<typeof Stories>(meta, name)` reference isn't
+     * practical. Args cannot be injected through this entrypoint — for
+     * prop-driven tests use the typed `mountStory` instead.
      */
     mountStoryById: (
         storyId: string,
-        opts?: Omit<MountStoryOptions<never>, 'args'>,
+        opts?: Omit<MountStoryOptions, 'args'>,
     ) => Promise<MountedStory>;
 }
 
@@ -121,8 +127,8 @@ export const test = baseTest.extend<ExtendedTestContext>({
     }, { timeout: 60000 }],
 
     mountStory: async ({ page }, use) => {
-        const mount: ExtendedTestContext['mountStory'] = (storiesModule, storyName, opts) => {
-            const id = getStoryId(storiesModule, storyName);
+        const mount: ExtendedTestContext['mountStory'] = (meta, storyName, opts) => {
+            const id = getStoryId(meta, storyName);
             return navigateToStory(page, id, opts?.args as Record<string, unknown> | undefined, opts?.globals, opts?.waitUntil);
         };
 

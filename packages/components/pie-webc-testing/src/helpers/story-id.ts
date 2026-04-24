@@ -1,8 +1,10 @@
 /**
  * Mirrors Storybook's CSF id-derivation algorithm so we can derive a story's
- * runtime id from its export name without a build-time codegen step.
+ * runtime id from its title + export name without loading the full stories
+ * module at runtime (those modules pull in `lit` / Storybook internals that
+ * Node can't resolve cross-workspace).
  *
- * The algorithm (from `@storybook/csf`, stable across Storybook 6-10):
+ * Algorithm (from `@storybook/csf`, stable across Storybook 6-10):
  *   1. Split a camelCase export name into space-separated words.
  *   2. Lowercase, replace each non-alphanumeric character with `-`, collapse
  *      runs of `-`, trim leading/trailing `-`.
@@ -20,29 +22,15 @@ const sanitize = (input: string): string => splitCamelCase(input)
     .replace(/^-+/, '')
     .replace(/-+$/, '');
 
-const toStoryId = (kind: string, name: string): string => `${sanitize(kind)}--${sanitize(name)}`;
-
-type Meta = { title: string };
-type StoriesModule = { default: Meta } & Record<string, unknown>;
-
 /**
- * Derives the Storybook story id from a stories module and an exported story name.
+ * Derives the Storybook story id for a given title + story export name.
  *
  * @example
- *   import * as ButtonStories from '.../pie-button.test.stories';
- *   getStoryId(ButtonStories, 'Primary');         // 'button--primary'
- *   getStoryId(ButtonStories, 'FormIntegration'); // 'button--form-integration'
+ *   getStoryId({ title: 'Button' }, 'Primary');         // 'button--primary'
+ *   getStoryId({ title: 'Button' }, 'FormIntegration'); // 'button--form-integration'
  *
- * `storyName` is constrained to actual exports of the module, so renaming a
- * story breaks tests at build time rather than at runtime via a Storybook 404.
+ * Tests pass `meta = { title: 'Button' }` directly rather than importing the
+ * stories module value, because that module pulls in browser-only deps that
+ * Playwright's Node loader can't process.
  */
-export const getStoryId = <
-    M extends StoriesModule,
-    K extends Exclude<keyof M, 'default'> & string,
->(storiesModule: M, storyName: K): string => toStoryId(storiesModule.default.title, storyName);
-
-/**
- * Extracts the args type from a CSF story export so callers can pass typed
- * `args` overrides to `mountStory` without restating the prop interface.
- */
-export type StoryArgs<S> = S extends { args: infer A } ? A : never;
+export const getStoryId = (meta: { title: string }, storyName: string): string => `${sanitize(meta.title)}--${sanitize(storyName)}`;
